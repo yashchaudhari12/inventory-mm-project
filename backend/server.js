@@ -54,7 +54,17 @@ app.get('/api/stock', async (req, res) => {
 });
 
 app.get('/api/stock/low', async (req, res) => {
-  const [rows] = await pool.query(`SELECT * FROM low_stock_alert`);
+  const [rows] = await pool.query(`
+    SELECT
+      p.id AS product_id, p.sku, p.name, p.category,
+      s.quantity_on_hand, p.reorder_level,
+      (p.reorder_level - s.quantity_on_hand) AS shortfall,
+      v.name AS default_vendor, v.lead_time_days
+    FROM products p
+    JOIN stock s ON s.product_id = p.id
+    LEFT JOIN vendors v ON v.id = p.default_vendor_id
+    WHERE s.quantity_on_hand < p.reorder_level
+  `);
   res.json(rows);
 });
 
@@ -152,7 +162,12 @@ app.get('/api/dashboard', async (req, res) => {
     SELECT SUM(s.quantity_on_hand * p.unit_price) AS total_value
     FROM stock s JOIN products p ON p.id = s.product_id
   `);
-  const [[{ low_stock_count }]] = await pool.query(`SELECT COUNT(*) AS low_stock_count FROM low_stock_alert`);
+  const [[{ low_stock_count }]] = await pool.query(`
+    SELECT COUNT(*) AS low_stock_count
+    FROM products p
+    JOIN stock s ON s.product_id = p.id
+    WHERE s.quantity_on_hand < p.reorder_level
+`);
   const [[{ pending_po_count }]] = await pool.query(
     `SELECT COUNT(*) AS pending_po_count FROM purchase_orders WHERE status IN ('Pending','Ordered','Shipped')`
   );
