@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-const API = 'http://127.0.0.1:5000/api';
+const API = 'https://inventory-mm-project.onrender.com/api';
 const COLORS = ['#ef6c00', '#1565c0', '#5e35b1', '#2e7d32', '#c62828'];
 
 function Dashboard() {
